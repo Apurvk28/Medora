@@ -241,50 +241,67 @@ medora/
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Installation & Setup (Step-by-Step Guide)
+
+We have designed Medora to be incredibly simple to clone and run. You do not need any complex backend setup or databases!
 
 ### Prerequisites
-- Node.js v16 or higher
-- A Groq API Key (free at [console.groq.com](https://console.groq.com/))
+- **Node.js**: v16 or higher installed on your machine.
+- **Groq API Key**: Get a free API key instantly at [console.groq.com/keys](https://console.groq.com/keys).
 
-### Steps
+### Step-by-Step Cloning & Running
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/Apurvk28/medora.git
+
+# 2. Navigate into the frontend directory
 cd medora/frontend
 
-# 2. Install dependencies
+# 3. Install all required dependencies
 npm install
 
-# 3. Create environment file
+# 4. Set up your Environment Variables
+# Copy the provided example environment file to create your own .env file
 cp .env.example .env
-# OR manually create frontend/.env with:
-VITE_HEALTH_PREDICT_API_KEY=your_groq_key_1
-VITE_FIND_DOCTOR_API_KEY=your_groq_key_2
-VITE_GROQ_API_URL=https://api.groq.com/openai/v1/chat/completions
-VITE_GROQ_MODEL=llama-3.3-70b-versatile
 
-# 4. Start development server
+# 5. Open the newly created .env file in your editor and paste your Groq API key:
+# VITE_HEALTH_PREDICT_API_KEY=gsk_your_actual_key_here
+# VITE_FIND_DOCTOR_API_KEY=gsk_your_actual_key_here
+
+# 6. Start the development server
 npm run dev
 ```
 
-Open **[http://localhost:5173](http://localhost:5173)** in your browser.
+Once running, open your browser and navigate to **[http://localhost:5173](http://localhost:5173)** (or `http://localhost:5174` if port 5173 is busy).
 
 ---
 
-## 🔐 Environment Variables
+## 🔐 Environment Variables Explained
 
-Create a `.env` file inside the `frontend/` directory:
+Medora uses Vite environment variables. We have provided a ready-to-use `.env.example` file in the `frontend/` directory.
+
+When you copy `.env.example` to `.env`, you will see the following structure:
 
 ```env
-VITE_HEALTH_PREDICT_API_KEY=gsk_your_health_api_key_here
-VITE_FIND_DOCTOR_API_KEY=gsk_your_doctor_api_key_here
+# 1. GROQ AI API KEYS (REQUIRED)
+VITE_HEALTH_PREDICT_API_KEY=gsk_your_groq_api_key_here
+VITE_FIND_DOCTOR_API_KEY=gsk_your_groq_api_key_here
+
+# Groq API Endpoint & Model (Defaults are already configured in code, but can be overridden here)
 VITE_GROQ_API_URL=https://api.groq.com/openai/v1/chat/completions
 VITE_GROQ_MODEL=llama-3.3-70b-versatile
+
+# 2. CLOUDINARY CONFIGURATION (OPTIONAL)
+# Required only if you want to enable profile image uploads. Otherwise, a local fallback works automatically!
+VITE_CLOUD_NAME=your_cloudinary_cloud_name
+VITE_UPLOAD_PRESET=your_cloudinary_upload_preset
 ```
 
-> ⚠️ **Never push your `.env` file to GitHub.** It is already listed in `.gitignore`.
+### 💡 Why Medora is Foolproof:
+- **Zero-Config Defaults**: The codebase (`src/configs/apiKeys.js`) automatically falls back to the correct Groq API endpoints and Llama 3.3 model if you don't specify them in `.env`. You literally only need to supply your API keys!
+- **Optional Cloudinary**: If you don't configure Cloudinary keys, `uploadCloudinary.js` gracefully falls back to generating local mock URLs so you can still test uploading profile pictures without errors.
+- **Secure**: Your `.env` file is safely ignored in `.gitignore`, preventing accidental commits of your private keys.
 
 ---
 
