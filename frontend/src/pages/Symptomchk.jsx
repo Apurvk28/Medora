@@ -1,26 +1,83 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { HEALTH_PREDICT_API_KEY, GROQ_API_URL, GROQ_MODEL } from "../configs/apiKeys";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useNavigate } from "react-router-dom";
 
 const HealthPredict = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("plain"); // 'plain' or 'questions'
   const [symptoms, setSymptoms] = useState("");
+  const [answers, setAnswers] = useState({
+    ageGender: "",
+    primarySymptom: "",
+    duration: "",
+    severity: "5",
+    fever: "",
+    painType: "",
+    associatedSymptoms: "",
+    medicalConditions: "",
+    medications: "",
+    lifestyleChanges: "",
+  });
+
   const [isLoading, setIsLoading] = useState(false);
-  const [report, setReport] = useState(null);
+  const [report, setReport] = useState(() => {
+    const saved = localStorage.getItem("symptomReport");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const reportRef = useRef(null);
 
+  // Load answers/symptoms from session if available
+  useEffect(() => {
+    const savedAnswers = localStorage.getItem("symptomAnswers");
+    if (savedAnswers) setAnswers(JSON.parse(savedAnswers));
+    const savedSymptoms = localStorage.getItem("symptomPlain");
+    if (savedSymptoms) setSymptoms(savedSymptoms);
+  }, []);
+
+  const handleAnswerChange = (field, val) => {
+    const updated = { ...answers, [field]: val };
+    setAnswers(updated);
+    localStorage.setItem("symptomAnswers", JSON.stringify(updated));
+  };
+
+  const handleSymptomsChange = (val) => {
+    setSymptoms(val);
+    localStorage.setItem("symptomPlain", val);
+  };
+
   const generateReport = async (e) => {
     e.preventDefault();
-    if (!symptoms.trim()) return;
+    if (activeTab === "plain" && !symptoms.trim()) return;
+    if (activeTab === "questions" && !answers.primarySymptom.trim()) {
+      setError("Please describe your primary symptom.");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     setReport(null);
 
-    const prompt = `You are a medical AI assistant for Medora Health Platform. A patient has described their symptoms in plain English. Generate a comprehensive, detailed health report in the following structured format using markdown-style headings. Be thorough, compassionate, and educational. Do NOT give a final diagnosis but provide helpful guidance.
+    const patientDetails = activeTab === "plain"
+      ? `Patient's symptoms (Plain English): "${symptoms}"`
+      : `Patient Clinical Questionnaire Answers:
+      1. Age & Gender: ${answers.ageGender || "Not specified"}
+      2. Primary Symptom: ${answers.primarySymptom}
+      3. Duration: ${answers.duration || "Not specified"}
+      4. Severity (1-10): ${answers.severity}
+      5. Fever/Temperature: ${answers.fever || "None reported"}
+      6. Pain Characteristics: ${answers.painType || "None reported"}
+      7. Associated Symptoms: ${answers.associatedSymptoms || "None reported"}
+      8. Existing Medical Conditions: ${answers.medicalConditions || "None reported"}
+      9. Current Medications: ${answers.medications || "None reported"}
+      10. Recent Travel/Lifestyle Changes: ${answers.lifestyleChanges || "None reported"}`;
 
-Patient's symptoms: "${symptoms}"
+    const prompt = `You are a medical AI assistant for Medora Health Platform. A patient has provided their symptom details below. Generate a comprehensive, detailed health report in the following structured format using markdown-style headings. Be thorough, compassionate, and educational. Do NOT give a final diagnosis but provide helpful guidance.
+
+${patientDetails}
 
 Generate the report in this exact JSON structure:
 {
@@ -50,7 +107,7 @@ Return ONLY the JSON, no extra text.`;
           model: GROQ_MODEL,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 2500,
         }),
       });
 
@@ -59,14 +116,14 @@ Return ONLY the JSON, no extra text.`;
       const data = await response.json();
       const content = data.choices[0].message.content;
       
-      // Extract JSON from potential markdown blocks
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : content;
       
       const parsed = JSON.parse(cleanJson);
       setReport(parsed);
+      localStorage.setItem("symptomReport", JSON.stringify(parsed));
     } catch (err) {
-      setError("Failed to generate report. Please check your symptoms and try again.");
+      setError("Failed to generate report. Please check your inputs and try again.");
     }
 
     setIsLoading(false);
@@ -102,40 +159,194 @@ Return ONLY the JSON, no extra text.`;
     setIsDownloading(false);
   };
 
+  const handleFindDoctor = () => {
+    const query = report?.possibleConditions?.[0] || report?.possibleConditions?.[1] || "General Physician";
+    localStorage.setItem("doctorSearchQuery", query);
+    navigate("/doctors");
+  };
+
+  const handleCustomDiet = () => {
+    const query = report?.possibleConditions?.join(", ") || symptoms || answers.primarySymptom;
+    localStorage.setItem("dietGoalQuery", `Create a recovery and immunity-boosting diet tailored for a patient experiencing/recovering from: ${query}`);
+    navigate("/custom-diet");
+  };
+
   return (
-    <section className="py-12">
+    <section className="py-12 px-4">
       {/* Header */}
-      <div className="px-4 mx-auto max-w-screen-md text-center mb-10">
+      <div className="max-w-screen-md mx-auto text-center mb-10">
         <h2 className="heading text-center">Healthcare Predict</h2>
         <p className="text__para text-center mt-2">
-          Describe your symptoms in plain English and our AI will generate a comprehensive health report for you.
+          Choose how you want to describe your symptoms and get a comprehensive clinical AI report.
         </p>
       </div>
 
+      {/* Tabs */}
+      <div className="max-w-3xl mx-auto mb-8 flex bg-gray-100 p-1.5 rounded-2xl shadow-inner">
+        <button
+          type="button"
+          onClick={() => setActiveTab("plain")}
+          className={`flex-1 py-3.5 rounded-xl font-[700] text-[16px] transition-all duration-300 ${
+            activeTab === "plain"
+              ? "bg-primaryColor text-white shadow-md"
+              : "text-headingColor hover:bg-gray-200"
+          }`}
+        >
+          📝 Plain English Description
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("questions")}
+          className={`flex-1 py-3.5 rounded-xl font-[700] text-[16px] transition-all duration-300 ${
+            activeTab === "questions"
+              ? "bg-primaryColor text-white shadow-md"
+              : "text-headingColor hover:bg-gray-200"
+          }`}
+        >
+          📋 10 Clinical Questions
+        </button>
+      </div>
+
       {/* Input Form */}
-      <div className="container max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto container">
         <div
-          className="rounded-2xl p-8 shadow-lg"
-          style={{ background: "linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%)", border: "1px solid #c3ddf5" }}
+          className="rounded-2xl p-8 shadow-lg bg-white"
+          style={{ border: "1px solid #c3ddf5", background: "linear-gradient(135deg, #f8faff 0%, #edf4fc 100%)" }}
         >
           <form onSubmit={generateReport}>
-            <div className="mb-6">
-              <label className="block text-headingColor font-[700] text-[18px] mb-3">
-                Describe your symptoms
-              </label>
-              <textarea
-                className="w-full p-4 rounded-xl text-[16px] font-[400] border border-gray-200 focus:outline-none focus:border-primaryColor resize-none shadow-sm"
-                rows={5}
-                placeholder="e.g. I am experiencing itching, redness on skin, not sleeping well, feeling tired, and mild headaches..."
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                required
-              />
-            </div>
+            {activeTab === "plain" ? (
+              <div className="mb-6">
+                <label className="block text-headingColor font-[700] text-[18px] mb-3">
+                  Describe your symptoms naturally
+                </label>
+                <textarea
+                  className="w-full p-4 rounded-xl text-[16px] font-[400] border border-gray-200 focus:outline-none focus:border-primaryColor resize-none shadow-sm bg-white"
+                  rows={6}
+                  placeholder="e.g. I am experiencing itching, redness on skin, not sleeping well, feeling tired, and mild headaches for the past 3 days..."
+                  value={symptoms}
+                  onChange={(e) => handleSymptomsChange(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="space-y-6 mb-6">
+                <h3 className="text-headingColor font-[700] text-[20px] border-b pb-3 mb-4">
+                  Step-by-Step Clinical Questionnaire (10 Parameters)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">1. Age & Gender</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 28, Female"
+                      value={answers.ageGender}
+                      onChange={(e) => handleAnswerChange("ageGender", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">2. Primary Symptom *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Severe headache / Skin rash"
+                      value={answers.primarySymptom}
+                      onChange={(e) => handleAnswerChange("primarySymptom", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">3. Duration</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 3 days / 2 weeks"
+                      value={answers.duration}
+                      onChange={(e) => handleAnswerChange("duration", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">
+                      4. Severity (1 to 10): <span className="text-primaryColor font-bold">{answers.severity}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={answers.severity}
+                      onChange={(e) => handleAnswerChange("severity", e.target.value)}
+                      className="w-full mt-2 accent-primaryColor"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">5. Fever / Temperature</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 101°F / Chills / Normal"
+                      value={answers.fever}
+                      onChange={(e) => handleAnswerChange("fever", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">6. Pain Characteristics</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sharp, throbbing, constant"
+                      value={answers.painType}
+                      onChange={(e) => handleAnswerChange("painType", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">7. Associated Symptoms</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Nausea, dizziness, fatigue, cough"
+                      value={answers.associatedSymptoms}
+                      onChange={(e) => handleAnswerChange("associatedSymptoms", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">8. Existing Medical Conditions</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Diabetes, Hypertension, None"
+                      value={answers.medicalConditions}
+                      onChange={(e) => handleAnswerChange("medicalConditions", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">9. Current Medications</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Metformin, Vitamin D, None"
+                      value={answers.medications}
+                      onChange={(e) => handleAnswerChange("medications", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[15px] font-[600] text-headingColor mb-1">10. Recent Travel / Lifestyle Changes</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Traveled abroad, high stress, changed diet"
+                      value={answers.lifestyleChanges}
+                      onChange={(e) => handleAnswerChange("lifestyleChanges", e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primaryColor text-white text-[18px] font-[700] py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3"
+              className="w-full bg-primaryColor text-white text-[18px] font-[700] py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-md"
             >
               {isLoading ? (
                 <>
@@ -143,7 +354,7 @@ Return ONLY the JSON, no extra text.`;
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  Generating Report...
+                  Generating Comprehensive AI Report...
                 </>
               ) : (
                 <>
@@ -156,28 +367,28 @@ Return ONLY the JSON, no extra text.`;
 
         {/* Error */}
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center font-semibold">
             {error}
           </div>
         )}
 
         {/* Report */}
         {report && (
-          <div className="mt-10">
+          <div className="mt-12">
             {/* Download Button */}
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-[24px] font-[700] text-headingColor">Your Health Report</h3>
               <button
                 onClick={downloadPDF}
                 disabled={isDownloading}
-                className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl font-[600] hover:bg-green-700 transition-all duration-300"
+                className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-[600] hover:bg-green-700 transition-all duration-300 shadow-md"
               >
                 {isDownloading ? "Generating PDF..." : "⬇ Download PDF"}
               </button>
             </div>
 
             {/* Report Content */}
-            <div ref={reportRef} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div ref={reportRef} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
               {/* Report Header */}
               <div className="bg-primaryColor text-white p-8">
                 <div className="flex items-center justify-between">
@@ -191,8 +402,10 @@ Return ONLY the JSON, no extra text.`;
                   </div>
                 </div>
                 <div className="mt-5 bg-white/10 rounded-xl p-4">
-                  <p className="text-blue-100 text-sm font-semibold uppercase tracking-wider mb-1">Reported Symptoms</p>
-                  <p className="text-white text-[16px]">{symptoms}</p>
+                  <p className="text-blue-100 text-sm font-semibold uppercase tracking-wider mb-1">Reported Symptoms / Parameters</p>
+                  <p className="text-white text-[16px]">
+                    {activeTab === "plain" ? symptoms : `Primary Symptom: ${answers.primarySymptom} | Severity: ${answers.severity}/10 | Duration: ${answers.duration || "N/A"}`}
+                  </p>
                 </div>
               </div>
 
@@ -280,6 +493,41 @@ Return ONLY the JSON, no extra text.`;
                 <div className="bg-gray-100 border border-gray-300 rounded-xl p-5 text-[13px] text-gray-500 leading-6">
                   <strong className="text-gray-600">⚕️ Disclaimer:</strong> {report.disclaimer}
                 </div>
+              </div>
+            </div>
+
+            {/* INTERLINKING ACTION BUTTONS / CARDS */}
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-md flex flex-col justify-between hover:shadow-lg transition-all duration-300">
+                <div>
+                  <div className="text-[32px] mb-2">🏥</div>
+                  <h4 className="text-[20px] font-[700] text-headingColor mb-2">Need to Consult a Specialist?</h4>
+                  <p className="text-textColor text-[15px] leading-6 mb-6">
+                    Find top-rated doctors and hospitals in your city specialized in treating your predicted conditions.
+                  </p>
+                </div>
+                <button
+                  onClick={handleFindDoctor}
+                  className="w-full bg-primaryColor text-white py-3.5 rounded-xl font-[700] text-[16px] hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <span>🔍</span> Find a Doctor for These Symptoms
+                </button>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-6 shadow-md flex flex-col justify-between hover:shadow-lg transition-all duration-300">
+                <div>
+                  <div className="text-[32px] mb-2">🥗</div>
+                  <h4 className="text-[20px] font-[700] text-headingColor mb-2">Want a Supporting Diet Plan?</h4>
+                  <p className="text-textColor text-[15px] leading-6 mb-6">
+                    Generate a fully customized, goal-oriented daily meal plan to support your recovery and boost immunity.
+                  </p>
+                </div>
+                <button
+                  onClick={handleCustomDiet}
+                  className="w-full bg-green-600 text-white py-3.5 rounded-xl font-[700] text-[16px] hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <span>✨</span> Customise Diet for These Symptoms
+                </button>
               </div>
             </div>
           </div>
