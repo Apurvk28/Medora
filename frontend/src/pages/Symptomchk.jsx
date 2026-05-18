@@ -4,6 +4,23 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 
+const commonSymptoms = [
+  "Severe headache with nausea",
+  "Persistent cough and mild fever",
+  "Itching and red skin rash",
+  "Difficulty sleeping and chronic fatigue",
+  "Lower back pain radiating to leg",
+  "Acid reflux and severe heartburn",
+  "Shortness of breath during light exertion",
+  "Sore throat and difficulty swallowing",
+  "Frequent urination and excessive thirst",
+  "Dizziness and feeling lightheaded",
+  "Joint pain and morning stiffness",
+  "Stomach cramp and watery diarrhea",
+  "High fever with chills and body ache",
+  "Anxiety, rapid heartbeat, and sweating"
+];
+
 const HealthPredict = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("plain"); // 'plain' or 'questions'
@@ -20,6 +37,9 @@ const HealthPredict = () => {
     medications: "",
     lifestyleChanges: "",
   });
+
+  const [showPlainSuggestions, setShowPlainSuggestions] = useState(false);
+  const [showPrimarySuggestions, setShowPrimarySuggestions] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState(() => {
@@ -42,12 +62,37 @@ const HealthPredict = () => {
     const updated = { ...answers, [field]: val };
     setAnswers(updated);
     localStorage.setItem("symptomAnswers", JSON.stringify(updated));
+    if (field === "primarySymptom") {
+      setShowPrimarySuggestions(true);
+    }
   };
 
   const handleSymptomsChange = (val) => {
     setSymptoms(val);
     localStorage.setItem("symptomPlain", val);
+    setShowPlainSuggestions(true);
   };
+
+  const selectPlainSuggestion = (text) => {
+    setSymptoms(text);
+    localStorage.setItem("symptomPlain", text);
+    setShowPlainSuggestions(false);
+  };
+
+  const selectPrimarySuggestion = (text) => {
+    const updated = { ...answers, primarySymptom: text };
+    setAnswers(updated);
+    localStorage.setItem("symptomAnswers", JSON.stringify(updated));
+    setShowPrimarySuggestions(false);
+  };
+
+  const filteredPlainSymptoms = commonSymptoms.filter(s => 
+    symptoms && s.toLowerCase().includes(symptoms.toLowerCase()) && s.toLowerCase() !== symptoms.toLowerCase()
+  );
+
+  const filteredPrimarySymptoms = commonSymptoms.filter(s => 
+    answers.primarySymptom && s.toLowerCase().includes(answers.primarySymptom.toLowerCase()) && s.toLowerCase() !== answers.primarySymptom.toLowerCase()
+  );
 
   const generateReport = async (e) => {
     e.preventDefault();
@@ -215,7 +260,7 @@ Return ONLY the JSON, no extra text.`;
         >
           <form onSubmit={generateReport}>
             {activeTab === "plain" ? (
-              <div className="mb-6">
+              <div className="mb-6 relative">
                 <label className="block text-headingColor font-[700] text-[18px] mb-3">
                   Describe your symptoms naturally
                 </label>
@@ -225,8 +270,51 @@ Return ONLY the JSON, no extra text.`;
                   placeholder="e.g. I am experiencing itching, redness on skin, not sleeping well, feeling tired, and mild headaches for the past 3 days..."
                   value={symptoms}
                   onChange={(e) => handleSymptomsChange(e.target.value)}
+                  onFocus={() => setShowPlainSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowPlainSuggestions(false), 200)}
                   required
                 />
+
+                {/* Autocomplete Predictive Dropdown */}
+                {showPlainSuggestions && filteredPlainSymptoms.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-gray-100">
+                    <div className="p-2.5 bg-blue-50 text-xs font-bold text-primaryColor uppercase tracking-wider flex items-center justify-between">
+                      <span>✨ Predictive Symptom Suggestions</span>
+                      <span className="text-[10px] bg-blue-200 px-2 py-0.5 rounded-full text-blue-800">Click to complete</span>
+                    </div>
+                    {filteredPlainSymptoms.map((item, idx) => (
+                      <div
+                        key={idx}
+                        onMouseDown={() => selectPlainSuggestion(item)}
+                        className="p-3.5 text-sm text-textColor hover:bg-blue-50 hover:text-primaryColor cursor-pointer transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <span className="text-primaryColor opacity-70">🔍</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Suggestion Pills */}
+                {!symptoms && (
+                  <div className="mt-4">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <span>💡</span> Popular Symptom Phrases:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {commonSymptoms.slice(0, 5).map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => selectPlainSuggestion(item)}
+                          className="bg-blue-50 text-primaryColor border border-blue-200 hover:bg-primaryColor hover:text-white text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all duration-300 shadow-sm"
+                        >
+                          + {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6 mb-6">
@@ -245,16 +333,37 @@ Return ONLY the JSON, no extra text.`;
                       className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
                     />
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-[15px] font-[600] text-headingColor mb-1">2. Primary Symptom *</label>
                     <input
                       type="text"
                       placeholder="e.g. Severe headache / Skin rash"
                       value={answers.primarySymptom}
                       onChange={(e) => handleAnswerChange("primarySymptom", e.target.value)}
+                      onFocus={() => setShowPrimarySuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowPrimarySuggestions(false), 200)}
                       className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
                       required
                     />
+
+                    {/* Autocomplete Predictive Dropdown */}
+                    {showPrimarySuggestions && filteredPrimarySymptoms.length > 0 && (
+                      <div className="absolute left-0 right-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-gray-100">
+                        <div className="p-2 bg-blue-50 text-xs font-bold text-primaryColor uppercase tracking-wider flex items-center justify-between">
+                          <span>✨ Suggestions</span>
+                        </div>
+                        {filteredPrimarySymptoms.map((item, idx) => (
+                          <div
+                            key={idx}
+                            onMouseDown={() => selectPrimarySuggestion(item)}
+                            className="p-3 text-sm text-textColor hover:bg-blue-50 hover:text-primaryColor cursor-pointer transition-colors flex items-center gap-2 font-medium"
+                          >
+                            <span className="text-primaryColor opacity-70">🔍</span>
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[15px] font-[600] text-headingColor mb-1">3. Duration</label>
@@ -266,6 +375,7 @@ Return ONLY the JSON, no extra text.`;
                       className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primaryColor text-[15px] bg-white"
                     />
                   </div>
+
                   <div>
                     <label className="block text-[15px] font-[600] text-headingColor mb-1">
                       4. Severity (1 to 10): <span className="text-primaryColor font-bold">{answers.severity}</span>
