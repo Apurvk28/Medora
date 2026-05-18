@@ -5,6 +5,7 @@ import HealthPredict from "../pages/Symptomchk";
 import Login from "../pages/Login";
 import Contact from "../pages/Contact";
 import Doctors from "../pages/Doctors/Doctors";
+import CustomDiet from "../pages/CustomDiet";
 import { Routes, Route } from "react-router-dom";
 import MyAccount from "../Dashboard/user-account/MyAccount";
 import ProtectedRoute from "./ProtectedRoute";
@@ -16,6 +17,7 @@ const Routers = () => {
       <Route path="/home" element={<Home />} />
       <Route path="/symptomchk" element={<HealthPredict />} />
       <Route path="/doctors" element={<Doctors />} />
+      <Route path="/custom-diet" element={<CustomDiet />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Signup />} />
       <Route path="/contact" element={<Contact />} />

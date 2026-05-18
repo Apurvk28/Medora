@@ -19,6 +19,10 @@ const navLinks = [
     display: "Find a Doctor",
   },
   {
+    path: "/custom-diet",
+    display: "Customised Diet",
+  },
+  {
     path: "/contact",
     display: "Contact",
   },
