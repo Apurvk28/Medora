@@ -93,6 +93,7 @@ While generic LLMs are powerful, they are not designed or optimized for clinical
 |---|---|
 | 🩺 **Healthcare Predict** | Dual-mode input (Plain English vs 10 Clinical Questions) for comprehensive AI triage |
 | 🥗 **Customised Diet Plan** | Dual-mode input (Plain English vs Goal Parameters) for structured AI daily meal plans |
+| ✨ **Autocomplete Suggestions** | Real-time predictive text suggestions & popular prompt pills for symptoms and diet goals |
 | 🏥 **Find a Doctor** | Smart city search connecting patients with top 10 specialized doctors and hospitals |
 | 🔗 **3-Way Interlinking** | Seamlessly flow from symptom prediction to doctor discovery and custom diet generation |
 | 📄 **PDF Health Reports** | Download clean, professional PDF summaries for symptoms, doctor directories, and diets |
