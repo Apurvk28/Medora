@@ -4,6 +4,21 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 
+const commonDietGoals = [
+  "Weight loss 5kg in 2 months with high protein",
+  "Muscle gain and bulking diet for gym training",
+  "Low carb keto diet for rapid fat loss",
+  "Diabetic friendly low glycemic index meal plan",
+  "Low sodium diet for managing hypertension",
+  "Immunity boosting diet post viral fever recovery",
+  "PCOS friendly anti-inflammatory diet plan",
+  "Gluten-free diet for celiac disease management",
+  "Healthy weight maintenance with balanced macros",
+  "Intermittent fasting 16:8 schedule meal plan",
+  "Vegan high protein diet for athletic endurance",
+  "Heart healthy Mediterranean diet plan"
+];
+
 const CustomDiet = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("plain"); // 'plain' or 'questions'
@@ -17,6 +32,8 @@ const CustomDiet = () => {
     activityLevel: "Moderate",
     allergiesRestrictions: "",
   });
+
+  const [showPlainSuggestions, setShowPlainSuggestions] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState(() => {
@@ -53,7 +70,18 @@ const CustomDiet = () => {
   const handleGoalPlainChange = (val) => {
     setGoalPlain(val);
     localStorage.setItem("dietPlain", val);
+    setShowPlainSuggestions(true);
   };
+
+  const selectPlainSuggestion = (text) => {
+    setGoalPlain(text);
+    localStorage.setItem("dietPlain", text);
+    setShowPlainSuggestions(false);
+  };
+
+  const filteredPlainGoals = commonDietGoals.filter(g => 
+    goalPlain && g.toLowerCase().includes(goalPlain.toLowerCase()) && g.toLowerCase() !== goalPlain.toLowerCase()
+  );
 
   const generateReport = async (e) => {
     e.preventDefault();
@@ -219,7 +247,7 @@ Return ONLY the JSON, no extra text.`;
         >
           <form onSubmit={generateReport}>
             {activeTab === "plain" ? (
-              <div className="mb-6">
+              <div className="mb-6 relative">
                 <label className="block text-headingColor font-[700] text-[18px] mb-3">
                   Describe your dietary goals & preferences
                 </label>
@@ -229,8 +257,51 @@ Return ONLY the JSON, no extra text.`;
                   placeholder="e.g. I am 25 years old, looking to lose 5kg over 2 months, vegetarian, allergic to peanuts, working a desk job..."
                   value={goalPlain}
                   onChange={(e) => handleGoalPlainChange(e.target.value)}
+                  onFocus={() => setShowPlainSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowPlainSuggestions(false), 200)}
                   required
                 />
+
+                {/* Autocomplete Predictive Dropdown */}
+                {showPlainSuggestions && filteredPlainGoals.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-green-200 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-gray-100">
+                    <div className="p-2.5 bg-green-50 text-xs font-bold text-green-800 uppercase tracking-wider flex items-center justify-between">
+                      <span>✨ Predictive Diet Goal Suggestions</span>
+                      <span className="text-[10px] bg-green-200 px-2 py-0.5 rounded-full text-green-900">Click to complete</span>
+                    </div>
+                    {filteredPlainGoals.map((item, idx) => (
+                      <div
+                        key={idx}
+                        onMouseDown={() => selectPlainSuggestion(item)}
+                        className="p-3.5 text-sm text-textColor hover:bg-green-50 hover:text-green-800 cursor-pointer transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <span className="text-green-600 opacity-70">🥗</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Suggestion Pills */}
+                {!goalPlain && (
+                  <div className="mt-4">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <span>💡</span> Popular Diet Goal Phrases:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {commonDietGoals.slice(0, 5).map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => selectPlainSuggestion(item)}
+                          className="bg-green-50 text-green-800 border border-green-200 hover:bg-green-600 hover:text-white text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all duration-300 shadow-sm"
+                        >
+                          + {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6 mb-6">
