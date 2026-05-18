@@ -21,23 +21,42 @@ const Login = () => {
 
     // Simulate login without backend
     setTimeout(() => {
-      const mockUser = {
-        name: formData.email.split('@')[0],
-        email: formData.email,
-        role: "patient"
-      };
+      // Clear out all previous session reports/data as requested by user
+      localStorage.removeItem("symptomReport");
+      localStorage.removeItem("dietReport");
+      localStorage.removeItem("doctorReport");
+      localStorage.removeItem("dietGoals");
+      localStorage.removeItem("symptomAnswers");
+      localStorage.removeItem("doctorSearchQuery");
+
+      const regUserStr = localStorage.getItem("registeredUser");
+      const regUser = regUserStr ? JSON.parse(regUserStr) : null;
+
+      let activeUser;
+      if (regUser && regUser.email === formData.email) {
+        activeUser = regUser;
+      } else {
+        activeUser = {
+          name: formData.email.split('@')[0],
+          email: formData.email,
+          gender: "other",
+          bloodType: "O+",
+          role: "patient",
+          photo: ""
+        };
+      }
 
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: { 
-          user: mockUser, 
+          user: activeUser, 
           token: "mock-token-" + Date.now(), 
-          role: "patient" 
+          role: activeUser.role || "patient" 
         },
       });
 
       setLoading(false);
-      toast.success(`Welcome back, ${mockUser.name}! 👋`);
+      toast.success(`Welcome back, ${activeUser.name}! 👋`);
       navigate("/home");
     }, 1000);
   };

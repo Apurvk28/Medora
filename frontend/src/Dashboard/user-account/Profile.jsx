@@ -1,33 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 
 import { useNavigate } from "react-router-dom";
 import uploadImageToCloudinary from "../../utils/uploadCloudinary.js";
 import { BASE_URL, token } from "../../config.js";
 import { toast } from "react-toastify";
 import HashLoader from "react-spinners/HashLoader";
+import { authContext } from "../../context/AuthContext.jsx";
+
 const Profile = ({ user }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { dispatch } = useContext(authContext);
 
   // Inside Profile component
   const [formData, setFormData] = useState({
-    name: user.name || "",
-    email: user.email || "",
-    password: user.password || "",
-    photo: user.photo || null,
-    gender: user.gender || "",
-    bloodType: user.bloodType || "",
+    name: user?.name || "",
+    email: user?.email || "",
+    password: user?.password || "",
+    photo: user?.photo || null,
+    gender: user?.gender || "",
+    bloodType: user?.bloodType || "",
   });
 
   const navigate = useNavigate();
 
   useEffect(() => {
     setFormData({
-      name: user.name,
-      email: user.email,
-      photo: user.photo,
-      gender: user.gender,
-      bloodType: user.bloodType,
+      name: user?.name || "",
+      email: user?.email || "",
+      photo: user?.photo || null,
+      gender: user?.gender || "",
+      bloodType: user?.bloodType || "",
     });
   }, [user]);
 
@@ -45,32 +48,26 @@ const Profile = ({ user }) => {
     }));
   };
   const submitHandler = async (event) => {
-    // console.log(formData);
     event.preventDefault();
     setLoading(true);
 
-    try {
-      const res = await fetch(`${BASE_URL}/users/${user._id}`, {
-        method: "put",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+    setTimeout(() => {
+      const updatedUser = { ...user, ...formData };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: {
+          user: updatedUser,
+          token: localStorage.getItem("token") || "mock-token",
+          role: localStorage.getItem("role") || "patient",
         },
-        body: JSON.stringify(formData),
       });
-      const { message } = await res.json();
-      if (!res.ok) {
-        throw new Error(message);
-      }
-
       setLoading(false);
-      toast.success(message);
-      navigate("/users/profile/me");
-    } catch (err) {
-      toast.error(err.message);
-      setLoading(false);
-    }
+      toast.success("Profile updated successfully!");
+      window.location.reload(); // Reload to refresh MyAccount state instantly
+    }, 500);
   };
+
 
   return (
     <div className="mt-10">

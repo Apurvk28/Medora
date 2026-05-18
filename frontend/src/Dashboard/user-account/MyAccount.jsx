@@ -34,26 +34,36 @@ const MyAccount = () => {
           <div className="grid md:grid-cols-3 gap-10">
             <div className="pb-[50px] px-[30px] rounded-md">
               <div className="flex items-center justify-center">
-                <figure className="w-[100px] h-[100px] rounded-full border-2 border-solid border-primaryColor">
-                  <img
-                    src={userData.photo}
-                    alt=""
-                    className="w-full h-full rounded-full"
-                  />
+                <figure className="w-[100px] h-[100px] rounded-full border-2 border-solid border-primaryColor bg-primaryColor flex items-center justify-center text-white font-bold text-[36px] shadow-md overflow-hidden">
+                  {userData.photo ? (
+                    <img
+                      src={userData.photo}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{userData?.name?.charAt(0) || "👤"}</span>
+                  )}
                 </figure>
               </div>
 
-              <div className="text-center mt-4">
-                <h3 className="text-[18px] leading-[30px] text-headingColor font-bold">
+              <div className="text-center mt-6 space-y-2">
+                <h3 className="text-[20px] leading-[30px] text-headingColor font-bold">
                   {userData.name}
                 </h3>
                 <p className="text-textColor text-[15px] leading-6 font-medium">
-                  {userData.email}
+                  📧 {userData.email}
+                </p>
+                <p className="text-textColor text-[15px] leading-6 font-medium capitalize">
+                  🚻 Gender:{" "}
+                  <span className="ml-1 text-primaryColor font-bold">
+                    {userData.gender || "Not Specified"}
+                  </span>
                 </p>
                 <p className="text-textColor text-[15px] leading-6 font-medium">
-                  Blood Type:{" "}
-                  <span className="ml-2 text-irisBlueColor text-[16px] font-bold leading-8">
-                    {userData.bloodType}
+                  🩸 Blood Type:{" "}
+                  <span className="ml-1 text-irisBlueColor text-[16px] font-bold leading-8">
+                    {userData.bloodType || "O+"}
                   </span>
                 </p>
               </div>

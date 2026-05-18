@@ -7,6 +7,26 @@ const useFetchData = (url) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (url.includes("/users/profile/me")) {
+      setLoading(true);
+      setTimeout(() => {
+        const storedUser = localStorage.getItem("user");
+        let parsedUser = storedUser ? JSON.parse(storedUser) : null;
+        if (!parsedUser) {
+          parsedUser = {
+            name: "Guest Patient",
+            email: "patient@example.com",
+            gender: "other",
+            bloodType: "O+",
+            photo: "",
+          };
+        }
+        setData(parsedUser);
+        setLoading(false);
+      }, 300);
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {

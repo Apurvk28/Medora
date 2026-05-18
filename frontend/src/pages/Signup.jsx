@@ -24,6 +24,7 @@ const Signup = () => {
 
     // Simulate signup without backend
     setTimeout(() => {
+      localStorage.setItem("registeredUser", JSON.stringify(formData));
       setLoading(false);
       toast.success("Account created successfully! Please login.");
       navigate("/login");
