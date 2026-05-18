@@ -33,11 +33,12 @@ To overcome both the clinical and technical challenges, we engineered **Medora**
 
 Medora completely eliminates backend complexity while delivering state-of-the-art medical AI intelligence directly to the patient's device:
 
-1. **Plain-English Symptom Triage**: Patients describe their symptoms naturally, without needing medical jargon or prior health records.
-2. **Ultra-Fast Groq AI Engine**: Powered by **Groq's Llama 3.3 70B** model running on LPUs (Language Processing Units), Medora generates comprehensive, 10-section structured health reports in under 2 seconds.
-3. **Instant Professional PDF Export**: Using client-side `jsPDF` and `html2canvas`, patients can instantly download clean, formatted medical reports to share directly with their physical doctors.
-4. **Intelligent Doctor Discovery**: A smart, city-based search engine that instantly connects patients with the top 10 specialized doctors and multi-specialty hospitals near them.
-5. **Zero-Liability Client Auth**: All patient onboarding and session data are securely managed via browser `localStorage`. No patient health queries or personal data are ever stored on an external database, guaranteeing absolute privacy.
+1. **Dual-Mode Symptom Triage**: Patients can choose between describing symptoms in natural plain English or answering a structured 10-parameter clinical questionnaire (covering age, severity, duration, fever, pain characteristics, medical history, etc.).
+2. **Dual-Mode Customised Diet Plans**: A dedicated nutrition engine where patients can state dietary goals in plain English or answer expert parameters (weight, goal type, activity level, allergies) to receive a highly structured 7-section daily meal plan.
+3. **Seamless 3-Way Interlinking**: All core features are deeply connected. A generated health prediction report provides single-click CTA cards to instantly find relevant specialist doctors or generate supporting clinical diet plans tailored to those exact symptoms.
+4. **Ultra-Fast Groq AI Engine**: Powered by **Groq's Llama 3.3 70B** model running on LPUs, Medora generates comprehensive structured health, doctor, and diet reports in under 2 seconds.
+5. **Instant Professional PDF Export**: Using client-side `jsPDF` and `html2canvas`, patients can instantly download clean, formatted medical reports, doctor directories, and diet plans to share directly with physicians.
+6. **Stateless Session-Only Auth**: All patient onboarding and session data are securely managed via browser `localStorage`. Logging into a new session automatically resets and forgets previous session data, guaranteeing absolute privacy by design.
 
 ---
 
@@ -47,12 +48,12 @@ Most existing healthcare applications treat the patient as a mere consumer for b
 
 | Feature / Dimension | 🏥 Traditional Apps (Practo, 1mg, Apollo) | 🏥 Hospital Portals | 🌟 Medora (Our System) |
 |---|---|---|---|
-| **Primary Focus** | Commercial appointment booking & pharmacy sales | Managing existing patient records & billing | **Instant AI symptom triage & patient medical clarity** |
-| **Barrier to Entry** | High (Mandatory phone OTPs, complex profile setups) | High (Requires existing Patient ID / MRN) | **Zero (Instant access, simple local session auth)** |
+| **Primary Focus** | Commercial appointment booking & pharmacy sales | Managing existing patient records & billing | **Instant AI symptom triage, custom diets & medical clarity** |
+| **Barrier to Entry** | High (Mandatory phone OTPs, complex profile setups) | High (Requires existing Patient ID / MRN) | **Zero (Instant access, stateless local session auth)** |
 | **Medical Intelligence** | None (Static search filters and generic blogs) | None (Static doctor schedules) | **Advanced AI (Llama 3.3 70B clinical analysis)** |
-| **Output Provided** | Booking confirmation slips & invoices | Lab test results & visit summaries | **Comprehensive 10-section diagnostic PDF report** |
+| **Output Provided** | Booking confirmation slips & invoices | Lab test results & visit summaries | **Comprehensive diagnostic, doctor & diet PDF reports** |
 | **Backend Complexity** | Massive monolithic servers & cloud databases | Heavy legacy hospital databases | **100% Client-side (Zero server maintenance overhead)** |
-| **Patient Privacy** | Queries & searches are tracked and monetized | Stored permanently on hospital servers | **Absolute Privacy (Zero database logging)** |
+| **Patient Privacy** | Queries & searches are tracked and monetized | Stored permanently on hospital servers | **Absolute Privacy (Session-only storage, zero DB logging)** |
 
 ---
 
@@ -65,12 +66,12 @@ While generic LLMs are powerful, they are not designed or optimized for clinical
 │       GENERIC AI CHATBOTS       │         │        MEDORA AI ENGINE        │
 │   (ChatGPT, Gemini, Claude)    │         │     (Clinical Guardrails)      │
 ├────────────────────────────────┤         ├────────────────────────────────┤
-│ • Unstructured conversational  │         │ • Strict 10-section clinical   │
-│   text blocks                  │         │   JSON schema enforced         │
+│ • Unstructured conversational  │         │ • Strict structured JSON       │
+│   text blocks                  │         │   schemas enforced             │
 │ • Prone to rambling and        │         │ • Embedded medical disclaimers │
 │   generic medical disclaimers  │         │   & red-flag emergency alerts  │
-│ • Requires complex patient     │         │ • Zero prompt engineering      │
-│   prompt engineering           │         │   required by the patient      │
+│ • Requires complex patient     │         │ • Guided 10-parameter clinical │
+│   prompt engineering           │         │   & diet questionnaires        │
 │ • Cannot discover local city   │         │ • Built-in city-based doctor & │
 │   doctors or hospitals         │         │   hospital discovery           │
 │ • No professional medical PDF  │         │ • Instant, formatted clinical  │
@@ -79,10 +80,10 @@ While generic LLMs are powerful, they are not designed or optimized for clinical
 ```
 
 ### Key Differentiators:
-1. **Enforced Clinical Structure**: Instead of a rambling chat stream, Medora forces the AI to output a strict, validated JSON schema containing exactly 10 essential clinical sections (Possible Conditions, Risk Analysis, Immediate Steps, Dietary Advice, etc.).
-2. **Zero Prompt Engineering**: Patients don't need to know how to "prompt" an AI. They simply type their symptoms, and Medora's background configuration injects sophisticated medical guardrails and role definitions automatically.
-3. **Actionable Local Discovery**: ChatGPT cannot reliably book or find specific local hospital contact details. Medora features a dedicated "Find a Doctor" module that identifies top local specialists based on the patient's exact city.
-4. **Professional Presentation**: Chatbots leave you with text you have to copy-paste. Medora generates a beautifully styled, downloadable PDF report that looks like a formal clinical summary, ready to be handed to a physician.
+1. **Enforced Clinical Structure**: Instead of a rambling chat stream, Medora forces the AI to output strict, validated JSON schemas containing essential clinical sections (Possible Conditions, Immediate Steps, Daily Macros, Meal Plans, etc.).
+2. **Guided Parameter Input**: Patients don't need to know how to "prompt" an AI. They can use our guided 10-question clinical parameter form or diet parameter questionnaire to ensure all vital medical context is captured.
+3. **Actionable Local Discovery & Interlinking**: ChatGPT cannot seamlessly pass diagnostic context to find local doctors or create diets. Medora features 3-way interlinking where symptom reports automatically trigger relevant doctor searches and custom meal plans.
+4. **Professional Presentation**: Chatbots leave you with text you have to copy-paste. Medora generates beautifully styled, downloadable PDF reports that look like formal clinical summaries.
 
 ---
 
@@ -90,10 +91,12 @@ While generic LLMs are powerful, they are not designed or optimized for clinical
 
 | Feature | Description |
 |---|---|
-| 🩺 **Healthcare Predict** | Type symptoms in plain English and get a full AI-generated health report |
-| 📄 **PDF Health Reports** | Download detailed reports covering conditions, risks, medications, diet, and lifestyle |
-| 🏥 **Find a Doctor** | Search any Indian city and get top 10 doctors/hospitals with ratings, timings and contact |
-| 🔐 **Patient Auth** | Simple sign up & login with session stored in `localStorage` — no database needed |
+| 🩺 **Healthcare Predict** | Dual-mode input (Plain English vs 10 Clinical Questions) for comprehensive AI triage |
+| 🥗 **Customised Diet Plan** | Dual-mode input (Plain English vs Goal Parameters) for structured AI daily meal plans |
+| 🏥 **Find a Doctor** | Smart city search connecting patients with top 10 specialized doctors and hospitals |
+| 🔗 **3-Way Interlinking** | Seamlessly flow from symptom prediction to doctor discovery and custom diet generation |
+| 📄 **PDF Health Reports** | Download clean, professional PDF summaries for symptoms, doctor directories, and diets |
+| 🔐 **Stateless Session Auth** | Simple sign up & login with session stored in `localStorage` — resets on new login |
 | 📜 **Marquee Testimonials** | Auto-scrolling patient reviews from real use-case scenarios |
 | 📱 **Fully Responsive** | Works seamlessly across desktop, tablet, and mobile |
 
@@ -116,9 +119,10 @@ graph TD
     subgraph Client ["Medora Frontend Application (React + Vite + TailwindCSS)"]
         UI["Patient User Interface<br>(Home / Navigation)"]:::frontend
         Auth["AuthContext<br>(Client Session State)"]:::storage
-        LocalStore[("Browser localStorage<br>(Secure User Data)")]:::storage
+        LocalStore[("Browser localStorage<br>(Stateless Session Data)")]:::storage
         
         Predict["Healthcare Predict Page<br>(Symptomchk.jsx)"]:::frontend
+        Diet["Customised Diet Page<br>(CustomDiet.jsx)"]:::frontend
         Doctor["Find a Doctor Page<br>(FindDoctor.jsx)"]:::frontend
         
         Config["apiKeys.js Configuration<br>(Environment Variables)"]:::config
@@ -133,9 +137,15 @@ graph TD
     UI <--> Auth
     Auth <--> LocalStore
     UI --> Predict
+    UI --> Diet
     UI --> Doctor
     
+    Predict <-->|"3-Way Interlink<br>(Pass Context)"| Doctor
+    Predict <-->|"3-Way Interlink<br>(Pass Context)"| Diet
+    Diet <-->|"3-Way Interlink<br>(Pass Context)"| Doctor
+    
     Predict --> Config
+    Diet --> Config
     Doctor --> Config
     
     Config -- "Secure HTTPS REST<br>(HEALTH_PREDICT_API_KEY)" --> Groq
